@@ -1,0 +1,4 @@
+employee_id,display_name,is_active
+DEV-001,開発用 山田,1
+DEV-002,開発用 佐藤,1
+DEV-003,開発用 鈴木,0

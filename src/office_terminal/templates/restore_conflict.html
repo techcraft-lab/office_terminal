@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}復元世代の確認 | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="inspection-screen">
+  <header class="inspection-header">
+    <a class="back-link" href="/">← TOP</a>
+    <h1>点検記録を保存できません</h1>
+  </header>
+  <div class="form-alert" role="alert">{{ message }}</div>
+  {% if can_start_new %}
+  <p>古い入力内容は保存されていません。古い下書きを破棄して、新しい点検を開始してください。</p>
+  <p id="restore-conflict-status" class="form-alert" role="status" hidden></p>
+  <button id="start-new-inspection" class="save-inspection-button" type="button"
+          data-discard-target-available="{{ 'true' if discard_target_available else 'false' }}"
+          data-discard-restore-epoch="{{ discard_restore_epoch }}"
+          data-discard-idempotency-key="{{ discard_idempotency_key }}"
+          data-discard-draft-revision="{{ discard_draft_revision }}"
+          data-current-restore-epoch="{{ current_restore_epoch }}">古い下書きを破棄して新しい点検を開始</button>
+  {% endif %}
+</main>
+{% endblock %}

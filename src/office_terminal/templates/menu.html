@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}メニュー | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="sub-screen menu-screen">
+  <header class="sub-header">
+    <a class="back-link" href="/" aria-label="トップへ戻る">← TOP</a>
+    <h1>メニュー</h1>
+  </header>
+  <div class="menu-content">
+    <nav class="menu-options" aria-label="機能メニュー">
+      {% for item in menu_items %}
+      <a class="menu-option" href="{{ item.url }}">
+        <span class="menu-icon" aria-hidden="true">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+        <span class="menu-chevron" aria-hidden="true">›</span>
+      </a>
+      {% endfor %}
+    </nav>
+    <section class="pc-access-panel" aria-labelledby="pc-access-title">
+      <div class="pc-access-copy">
+        <h2 id="pc-access-title">PC・スマホからのアクセス</h2>
+        <p class="pc-access-description">同じ社内ネットワークで利用。社員選択式（本人認証なし）。</p>
+        {% if access_display.candidates %}
+        {% if access_display.candidates|length > 1 %}
+        <form class="pc-access-form" action="/menu" method="get">
+          <label for="pc-access-candidate">接続に使うネットワーク</label>
+          <div class="pc-access-controls">
+            <select id="pc-access-candidate" name="candidate">
+              {% for candidate in access_display.candidates %}
+              <option value="{{ candidate.key }}"
+                      {% if candidate.key == access_display.selected_key %}selected{% endif %}>
+                {{ candidate.interface }} — {{ candidate.ip }}
+              </option>
+              {% endfor %}
+            </select>
+            <button type="submit">接続先を表示</button>
+          </div>
+        </form>
+        {% else %}
+        <p class="pc-access-interface">
+          接続先：{{ access_display.candidates[0].interface }} — {{ access_display.candidates[0].ip }}
+        </p>
+        {% endif %}
+        <p class="pc-access-url-label">PC用URL</p>
+        <a class="pc-access-url" href="{{ access_display.selected_url }}">{{ access_display.selected_url }}</a>
+        {% else %}
+        <p class="pc-access-status" role="status">{{ access_display.message }}</p>
+        {% endif %}
+      </div>
+      {% if access_display.qr_data_uri %}
+      <div class="pc-access-qr">
+        <img src="{{ access_display.qr_data_uri }}" alt="PC用URLを開くQRコード">
+      </div>
+      {% endif %}
+      <p class="pc-access-note">URLとQRコードは通信到達性を保証しません。</p>
+    </section>
+  </div>
+  <a class="home-button" href="/">TOPへ戻る</a>
+</main>
+{% endblock %}

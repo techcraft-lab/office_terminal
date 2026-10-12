@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}出社・在席履歴 | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="sub-screen attendance-history-screen{% if is_pc %} pc-attendance-history-screen{% endif %}"
+      {% if is_pc %}data-idle-return="disabled"{% endif %}>
+  <header class="sub-header">
+    <a class="back-link" href="{% if is_pc %}/pc/attendees{% else %}/attendees{% endif %}"
+       aria-label="出社・在席へ戻る">← 出社・在席</a>
+    <h1>出社・在席履歴</h1>
+  </header>
+  <section class="attendance-history-content">
+    <p class="attendance-history-note">
+      登録日時はサーバーで記録した時刻です。実際の入退室時刻とは限りません。
+    </p>
+    <form class="attendance-history-filters" action="{{ page_path }}" method="get">
+      <label for="attendance-history-date">日付</label>
+      <input id="attendance-history-date" name="target_date" type="date"
+             value="{{ target_date.isoformat() }}" required>
+      <label for="attendance-history-employee">社員</label>
+      <select id="attendance-history-employee" name="employee_id">
+        <option value="">全社員</option>
+        {% for employee in employees %}
+        <option value="{{ employee.employee_id }}"
+                {% if employee.employee_id == employee_id %}selected{% endif %}>
+          {{ employee.employee_name }}
+        </option>
+        {% endfor %}
+      </select>
+      <button type="submit">絞り込む</button>
+    </form>
+    {% if records %}
+    <p class="attendance-history-count">{{ total_count }}件中 {{ (page - 1) * page_size + 1 }}〜{{ (page - 1) * page_size + records|length }}件</p>
+    <ol class="attendance-history-records">
+      {% for record in records %}
+      <li class="attendance-history-record">
+        <time datetime="{{ record.changed_at }}">{{ record.changed_at_display }}</time>
+        <strong class="attendance-history-name">{{ record.employee_name }}</strong>
+        <span class="attendance-history-operation">{{ record.operation_display }}</span>
+        <span class="attendance-history-status">変更後：{{ record.new_status }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="attendance-history-empty">該当する出社・在席履歴はありません。</p>
+    {% endif %}
+    {% if total_pages > 1 %}
+    <nav class="attendance-history-pagination" aria-label="履歴ページ">
+      {% if page > 1 %}
+      <a href="{{ page_path }}?target_date={{ target_date.isoformat() }}&amp;employee_id={{ employee_id|urlencode }}&amp;page={{ previous_page }}">前へ</a>
+      {% else %}
+      <span aria-disabled="true">前へ</span>
+      {% endif %}
+      <span>{{ page }} / {{ total_pages }}ページ</span>
+      {% if page < total_pages %}
+      <a href="{{ page_path }}?target_date={{ target_date.isoformat() }}&amp;employee_id={{ employee_id|urlencode }}&amp;page={{ next_page }}">次へ</a>
+      {% else %}
+      <span aria-disabled="true">次へ</span>
+      {% endif %}
+    </nav>
+    {% endif %}
+  </section>
+  <a class="home-button" href="/">TOPへ戻る</a>
+</main>
+{% endblock %}

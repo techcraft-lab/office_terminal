@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}トップ | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="home-screen">
+  <header class="top-bar">
+    <div class="top-left">
+    <div class="clock-block" aria-label="日本時間">
+      <time id="current-date" datetime="{{ now.isoformat() }}">{{ now.strftime("%Y年%m月%d日") }}</time>
+      <time id="current-time">{{ now.strftime("%H:%M:%S") }}</time>
+    </div>
+    <div class="company-logo-frame">
+      <img class="company-logo" src="{{ url_for('static', path='/images/company_logo.png') }}"
+           alt="Office Terminal">
+    </div>
+    </div>
+    <section id="weather-card" class="weather-card" aria-label="天気予報" data-status="{{ weather.status }}">
+      {% if weather.status == "ok" %}
+      <div class="weather-line weather-main"><span class="weather-place">{{ weather.region }}</span><span class="weather-icon" aria-hidden="true">{{ weather.icon }}</span><span class="weather-headline">{{ weather.headline }}</span></div>
+      <div class="weather-line weather-values"><span class="weather-temperature">{{ weather.temperature }}</span><span class="weather-pop">{{ weather.pop_text }}</span></div>
+      <div class="weather-line weather-meta"><span>{{ weather.issued }}</span>{% if weather.temperature_note %} <span>{{ weather.temperature_note }}</span>{% endif %}</div>
+      {% if weather.notice %}<div class="weather-line weather-notice" role="status">{{ weather.notice }}</div>{% endif %}
+      {% else %}
+      <div class="weather-line weather-main"><span class="weather-place">{{ weather.region }}</span></div>
+      <div class="weather-line weather-message" role="status">{{ weather.message }}</div>
+      {% if weather.issued %}<div class="weather-line weather-meta"><span>{{ weather.issued }}</span></div>{% endif %}
+      {% endif %}
+    </section>
+  </header>
+
+  <section id="home-draft-actions" class="draft-home-actions" data-restore-epoch="{{ restore_epoch }}" hidden>
+    <p id="home-draft-status" role="status" hidden></p>
+    <a id="resume-draft" class="menu-button" href="/inspection" hidden>点検を再開</a>
+    <button id="discard-home-draft" class="cancel-button" type="button" hidden>下書きを破棄</button>
+  </section>
+
+  <section class="main-content">
+    <section class="calendar-panel" aria-labelledby="calendar-title">
+      <div class="calendar-toolbar">
+        <a class="month-nav" href="/?year={{ previous_year }}&month={{ previous_month }}" aria-label="前月">‹</a>
+        <h1 id="calendar-title">{{ selected_year }}年 {{ selected_month }}月</h1>
+        <a class="month-nav" href="/?year={{ today.year }}&month={{ today.month }}" aria-label="今月">今月</a>
+        <a class="month-nav" href="/?year={{ next_year }}&month={{ next_month }}" aria-label="翌月">›</a>
+      </div>
+      <div id="calendar-grid" class="calendar-grid" role="grid" aria-label="{{ selected_year }}年{{ selected_month }}月"
+           data-calendar-year="{{ selected_year }}" data-calendar-month="{{ selected_month }}"
+           style="--week-count: {{ weeks|length }}">
+        <div class="weekday-row" role="row">
+          {% for weekday in ["月", "火", "水", "木", "金", "土", "日"] %}
+          <div role="columnheader">{{ weekday }}</div>
+          {% endfor %}
+        </div>
+        {% for week in weeks %}
+        <div class="week-row" role="row">
+          {% for cell in week %}
+          {% set status_name = "点検済み" if cell.status == "complete" else "異常・未実施あり" if cell.status == "alert" else "記録なし" %}
+          <a class="day-cell{% if not cell.in_month %} outside-month{% endif %}{% if cell.is_today %} today{% endif %}{% if cell.status == 'complete' %} status-complete{% elif cell.status == 'alert' %} status-alert{% endif %}"
+             role="gridcell" href="/history/{{ cell.date.isoformat() }}"
+             data-date="{{ cell.date.isoformat() }}"
+             data-date-label="{{ cell.date.year }}年{{ cell.date.month }}月{{ cell.date.day }}日"
+             data-status-name="{{ status_name }}"
+             data-is-today="{{ 'true' if cell.is_today else 'false' }}"
+             aria-label="{{ cell.date.year }}年{{ cell.date.month }}月{{ cell.date.day }}日、{{ status_name }}{% if cell.has_attendance %}、出社記録あり{% endif %}{% if cell.is_today %}、今日{% endif %}">
+            <span class="day-number">{{ cell.date.day }}</span>
+            {% if cell.status == "complete" or cell.status == "alert" or cell.has_attendance %}
+            <span class="day-marks" aria-hidden="true">
+              {% if cell.status == "complete" %}<span class="status-mark">✓</span>
+              {% elif cell.status == "alert" %}<span class="status-mark">!</span>{% endif %}
+              {% if cell.has_attendance %}<span class="attendance-mark">●</span>{% endif %}
+            </span>
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="calendar-notes">
+        <div class="legend" aria-label="点検状態の凡例">
+          <span><b class="legend-mark complete">✓</b>点検済み</span>
+          <span><b class="legend-mark alert">!</b>異常・未実施あり</span>
+          <span><b class="legend-mark none">—</b>記録なし</span>
+          <span><b class="legend-mark attendance">●</b>出社記録あり</span>
+        </div>
+        <p class="sample-note">各日の最新記録を表示します。日付をタッチすると履歴を確認できます。</p>
+      </div>
+    </section>
+    <aside class="attendee-panel" aria-labelledby="attendee-title">
+      <div class="attendee-header">
+        <div class="attendee-title-row">
+          <h2 id="attendee-title">出社者一覧</h2>
+        </div>
+        <p class="attendee-count">
+          在室<strong id="attendee-present-count">{{ attendees.present_count }}</strong>名／離席<strong id="attendee-away-count">{{ attendees.away_count }}</strong>名
+        </p>
+      </div>
+      {% if saved %}
+      <p class="save-message{% if saved == 'attention' %} attention-save-message{% endif %}" role="status">
+        {% if saved == "attention" %}要確認の記録を保存しました{% else %}点検記録を保存しました{% endif %}
+      </p>
+      {% endif %}
+        <p id="attendee-refresh-status" class="attendee-refresh-status" role="status" hidden></p>
+        <ul id="attendee-list" class="attendee-list">
+          {% for person in attendees.people %}
+          <li class="attendee-item" data-employee-id="{{ person.employee_id }}">
+            <span class="attendee-name">{{ person.name }}</span>
+            <span class="attendee-status{% if person.status == '離席中' %} away{% endif %}">{{ person.status }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        <p id="no-attendees" class="no-attendees" {% if attendees.people %}hidden{% endif %}>現在、出社者はいません</p>
+      <a class="attendee-manage-link" href="/attendees">出社・在席を更新</a>
+    </aside>
+  </section>
+
+  <nav class="bottom-bar" aria-label="メニュー">
+    <a class="menu-button" href="/menu"><span class="menu-icon" aria-hidden="true">☰</span>メニュー</a>
+  </nav>
+</main>
+{% endblock %}

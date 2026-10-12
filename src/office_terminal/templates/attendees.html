@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}出社・在席 | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="sub-screen attendance-screen{% if is_pc %} pc-attendance-screen{% endif %}"
+      {% if is_pc %}data-idle-return="disabled"{% endif %}>
+  <header class="sub-header">
+    <a class="back-link" href="/" aria-label="トップへ戻る">← TOP</a>
+    <h1>出社・在席</h1>
+  </header>
+  {% if employees %}
+  <form class="attendance-form" action="{{ form_action }}" method="post">
+    <input type="hidden" name="restore_epoch" value="{{ restore_epoch }}">
+    <input type="hidden" name="operation_key" value="{{ operation_key }}">
+    <div class="attendance-upper">
+      <p class="attendance-disclaimer">社員を選んで状態を更新します。社員選択は本人認証ではありません。</p>
+      <div class="attendance-selection">
+        <label for="attendance-employee">社員を選択</label>
+        <select id="attendance-employee" name="employee_id" required>
+          <option value="">社員を選択してください</option>
+          {% for employee in employees %}
+          <option value="{{ employee.employee_id }}"
+                  data-status="{{ employee.status }}"
+                  {% if selected_employee_id == employee.employee_id %}selected{% endif %}>
+            {{ employee.display_name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <section class="attendance-center">
+      <div class="attendance-feedback">
+        <p class="attendance-current-status" aria-live="polite">
+          現在の状態：<strong id="attendance-status">{{ selected_status or "未選択" }}</strong>
+        </p>
+        {% if message %}
+        <p class="form-alert attendance-message {{ message_kind }}" role="status">{{ message }}</p>
+        {% else %}
+        <p class="attendance-result-placeholder" aria-hidden="true"></p>
+        {% endif %}
+        {% if not restore_epoch_available %}
+        <p class="form-alert attendance-restore-message" role="alert">復元世代を確認できないため、状態は変更できません。</p>
+        {% endif %}
+      </div>
+      <div class="attendance-actions" aria-label="状態変更">
+        <button type="submit" name="operation" value="出社" data-allowed-from="退勤済み"
+                {% if selected_status != '退勤済み' %}hidden{% endif %}
+                {% if not restore_epoch_available %}disabled{% endif %}>出社して在室</button>
+        <button type="submit" name="operation" value="離席" data-allowed-from="在室"
+                {% if selected_status != '在室' %}hidden{% endif %}
+                {% if not restore_epoch_available %}disabled{% endif %}>離席</button>
+        <button type="submit" name="operation" value="戻り" data-allowed-from="離席中"
+                {% if selected_status != '離席中' %}hidden{% endif %}
+                {% if not restore_epoch_available %}disabled{% endif %}>戻り</button>
+        <button type="submit" name="operation" value="退勤" data-allowed-from="在室,離席中"
+                {% if selected_status not in ['在室', '離席中'] %}hidden{% endif %}
+                {% if not restore_epoch_available %}disabled{% endif %}>退勤済みにする</button>
+      </div>
+    </section>
+  </form>
+  {% else %}
+  <section class="attendance-empty-state">
+    <p class="attendance-disclaimer">社員を選んで状態を更新します。社員選択は本人認証ではありません。</p>
+    {% if message %}
+    <p class="form-alert attendance-message {{ message_kind }}" role="status">{{ message }}</p>
+    {% endif %}
+    {% if not restore_epoch_available %}
+    <p class="form-alert attendance-restore-message" role="alert">復元世代を確認できないため、状態は変更できません。</p>
+    {% endif %}
+    <section class="placeholder-card">
+      <p>有効な社員が登録されていません。管理CLIから社員CSVを取り込んでください。</p>
+    </section>
+  </section>
+  {% endif %}
+  <nav class="attendance-footer" aria-label="画面遷移">
+    <a class="attendance-history-link" href="{% if is_pc %}/pc/attendance/history{% else %}/attendance/history{% endif %}">
+      出社・在席履歴を見る
+    </a>
+    <a class="home-button" href="/">TOPへ戻る</a>
+  </nav>
+</main>
+{% endblock %}

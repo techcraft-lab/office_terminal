@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}点検履歴 | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="sub-screen history-index-screen">
+  <header class="sub-header">
+    <a class="back-link" href="/" aria-label="トップへ戻る">← TOP</a>
+    <h1>点検履歴</h1>
+  </header>
+  <section class="history-index-content">
+    <form class="history-date-form" action="/history" method="get">
+      <label for="target-date">日付を選択</label>
+      <input id="target-date" name="target_date" type="date" value="{{ today.isoformat() }}" required>
+      <button type="submit">履歴を表示</button>
+    </form>
+    <h2>記録のある日</h2>
+    {% if recorded_dates %}
+    <ul class="history-date-list">
+      {% for recorded_date in recorded_dates %}
+      <li><a href="/history/{{ recorded_date }}">{{ recorded_date }} の履歴を見る <span aria-hidden="true">›</span></a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="no-history-dates">保存された記録はありません。</p>
+    {% endif %}
+  </section>
+  <a class="home-button" href="/">TOPへ戻る</a>
+</main>
+{% endblock %}

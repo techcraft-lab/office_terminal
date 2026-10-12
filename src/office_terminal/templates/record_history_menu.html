@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}履歴 | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="sub-screen record-history-menu-screen">
+  <header class="sub-header">
+    <a class="back-link" href="/menu" aria-label="メニューへ戻る">← メニュー</a>
+    <h1>履歴</h1>
+  </header>
+  <nav class="record-history-options" aria-label="履歴の種類">
+    <a class="record-history-option" href="/history">
+      <span class="menu-icon" aria-hidden="true">✓</span>
+      <span>点検履歴</span>
+      <span class="menu-chevron" aria-hidden="true">›</span>
+    </a>
+    <a class="record-history-option" href="/attendance/history">
+      <span class="menu-icon" aria-hidden="true">●</span>
+      <span>出社・在席履歴</span>
+      <span class="menu-chevron" aria-hidden="true">›</span>
+    </a>
+  </nav>
+  <a class="home-button" href="/">TOPへ戻る</a>
+</main>
+{% endblock %}

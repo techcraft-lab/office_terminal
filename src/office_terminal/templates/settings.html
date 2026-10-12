@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="sub-screen">
+  <header class="sub-header">
+    <a class="back-link" href="/" aria-label="トップへ戻る">← トップ</a>
+    <h1>{{ title }}</h1>
+  </header>
+  <section class="settings-card" aria-labelledby="backup-title">
+    <h2 id="backup-title">バックアップ</h2>
+    <dl>
+      <dt>状態</dt>
+      <dd>{% if backup_status.enabled %}有効{% else %}無効{% endif %}</dd>
+      {% if not backup_status.enabled %}
+      <dt>理由</dt>
+      <dd>{{ backup_status.message }}</dd>
+      {% endif %}
+      <dt>実行状況</dt>
+      <dd>{% if backup_status.running %}実行中{% else %}待機中{% endif %}</dd>
+      <dt>最終試行日時</dt>
+      <dd>{{ backup_status.last_attempt_at or "未実行" }}</dd>
+      <dt>最終成功日時</dt>
+      <dd>{{ backup_status.last_success_at or "未実行" }}</dd>
+      <dt>次回予定</dt>
+      <dd>{{ backup_status.next_run_at or "予定なし" }}</dd>
+      <dt>直近のエラー</dt>
+      <dd>{{ backup_status.last_error or "なし" }}</dd>
+    </dl>
+    <p>Web画面からバックアップの実行、保存先変更、復元はできません。運用者がCLIを使用してください。</p>
+  </section>
+  <section class="settings-card" aria-labelledby="weather-title">
+    <h2 id="weather-title">天気情報</h2>
+    <dl>
+      <dt>地域</dt>
+      <dd>{{ weather.region or "—" }}</dd>
+      <dt>状態</dt>
+      <dd>{% if weather.status == "ok" %}取得済み{% else %}{{ weather.message }}{% endif %}</dd>
+      {% if weather.status == "ok" or weather.status == "stale" %}
+      <dt>予報の発表</dt>
+      <dd>{{ weather.office_name }} {{ weather.issued }}</dd>
+      {% endif %}
+      {% if weather.status == "ok" %}
+      <dt>今日の天気（全文）</dt>
+      <dd>{{ weather.full_text }}</dd>
+      <dt>気温</dt>
+      <dd>{{ weather.temperature }}{% if weather.temperature_note %}（{{ weather.temperature_note }}）{% endif %}</dd>
+      <dt>降水確率</dt>
+      <dd>{% for pop in weather.pops %}{{ pop.label }} {{ pop.text }}{% if not loop.last %}／{% endif %}{% endfor %}</dd>
+      {% endif %}
+      <dt>最終取得</dt>
+      <dd>{{ weather.fetched_at or "未取得" }}</dd>
+      <dt>直近のエラー</dt>
+      <dd>{{ weather.last_error or "なし" }}</dd>
+    </dl>
+    <p>{{ weather.source }}。気象庁の予報データを、天気の要約や時間帯別の表示用に加工しています。</p>
+  </section>
+  <a class="home-button" href="/">TOPへ戻る</a>
+</main>
+{% endblock %}

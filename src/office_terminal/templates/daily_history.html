@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ target_date.strftime("%Y年%m月%d日") }}の履歴 | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="sub-screen history-screen">
+  <header class="sub-header">
+    <a class="back-link" href="/history" aria-label="履歴の日付選択へ戻る">← 履歴一覧</a>
+    <h1>{{ target_date.strftime("%Y年%m月%d日") }}の履歴</h1>
+  </header>
+  {% if records %}
+  <section class="history-records" aria-label="点検記録">
+    {% for record in records %}
+    <article class="history-record{% if record.overall_status == 'attention' %} attention-record{% endif %}">
+      <header class="record-header">
+        <h2>{{ record.recorded_at_display }}　{{ record.employee_name }}</h2>
+        <span class="record-state">{% if record.overall_status == "complete" %}✓ 確認済み{% else %}! 要確認{% endif %}</span>
+      </header>
+      <dl class="record-items">
+        {% for item in items %}
+        {% set result = record.item_map[item.code] %}
+        <div class="record-item">
+          <dt>{{ item.label }}</dt>
+          <dd>
+            <span class="result-pill result-{{ result.result }}">{{ result_labels[result.result] }}</span>
+            {% if result.reason %}<span class="record-reason">{{ result.reason }}</span>{% endif %}
+          </dd>
+        </div>
+        {% endfor %}
+      </dl>
+      {% if record.note %}
+      <p class="record-note"><strong>全体備考：</strong>{{ record.note }}</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="placeholder-card empty-history">
+    <div class="placeholder-icon" aria-hidden="true">—</div>
+    <p>記録なし</p>
+  </section>
+  {% endif %}
+  <a class="home-button" href="/">TOPへ戻る</a>
+</main>
+{% endblock %}

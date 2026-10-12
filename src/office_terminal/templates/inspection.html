@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}退室点検 | 事務所 退室点検端末{% endblock %}
+{% block body %}
+<main class="inspection-screen">
+  <header class="inspection-header">
+    <a class="back-link" href="/" aria-label="TOPへ戻る">← TOP</a>
+    <h1>退室点検</h1>
+    <p>点検者の選択は本人認証ではありません。</p>
+  </header>
+
+  {% if error_message %}
+  <div class="form-alert" role="alert">{{ error_message }}</div>
+  {% endif %}
+
+  {% if not employees %}
+  <section class="no-employees">
+    <h2>点検者が登録されていません</h2>
+    <p>開発用社員の登録はREADMEのコマンドを実行してください。</p>
+  </section>
+  {% endif %}
+
+  <form class="inspection-form" action="/inspection" method="post"
+        data-start-date="{{ start_date }}" data-restore-epoch="{{ restore_epoch }}"
+        data-preserve-rendered="{{ 'true' if preserve_rendered else 'false' }}"
+        data-restore-epoch-available="{{ 'true' if restore_epoch_available else 'false' }}">
+    <input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+    <input type="hidden" name="draft_revision" value="{{ draft_revision }}">
+    <input type="hidden" name="restore_epoch" value="{{ restore_epoch }}">
+    <p id="draft-status" class="form-alert" role="status" hidden></p>
+    {% if errors.get("idempotency_key") %}<p class="field-error">{{ errors.get("idempotency_key") }}</p>{% endif %}
+    <section class="inspector-field">
+      <label for="employee-id">点検者</label>
+      <select id="employee-id" name="employee_id" required {% if not employees %}disabled{% endif %}>
+        <option value="">点検者を選択してください</option>
+        {% for employee in employees %}
+        <option value="{{ employee.employee_id }}" data-display-name="{{ employee.display_name }}"{% if form_data.get("employee_id") == employee.employee_id %} selected{% endif %}>
+          {{ employee.display_name }}
+        </option>
+        {% endfor %}
+      </select>
+      {% if errors.get("employee_id") %}<p class="field-error">{{ errors.get("employee_id") }}</p>{% endif %}
+    </section>
+
+    <p class="time-disclaimer">記録日時は保存時刻です。実際に扉を出た時刻ではありません。</p>
+
+    <section class="inspection-items" aria-label="点検項目">
+      {% if errors.get("results") %}<p class="field-error">{{ errors.get("results") }}</p>{% endif %}
+      {% for item in items %}
+      <fieldset class="inspection-item">
+        <legend>{{ loop.index }}. {{ item.label }}：{{ item.description }}</legend>
+        {% if item.note %}<p class="item-note">{{ item.note }}</p>{% endif %}
+        <div class="result-options">
+          {% for value, label in result_labels.items() %}
+          <label class="result-option">
+            <input type="radio" name="result_{{ item.code }}" value="{{ value }}"
+              {% if item.code == "everyone_left" and value == "confirmed" %}disabled aria-describedby="attendance-consistency-message"{% endif %}
+              {% if form_data.get("result_" ~ item.code) == value %}checked{% endif %} required>
+            <span>{{ label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% if item.code == "everyone_left" %}
+        <div class="attendance-consistency">
+          <p class="attendance-consistency-note">
+            判定は登録上の在席状態に基づきます。点検者本人は判定対象外です。
+          </p>
+          <p id="attendance-consistency-message" class="attendance-consistency-message"
+             role="status" aria-live="polite">
+            {% if attendance_conflicts is not none %}
+            点検者以外に在室・離席中の社員が登録されています。
+            {% else %}
+            点検者を選択すると在席状態を確認します。
+            {% endif %}
+          </p>
+          <ul id="attendance-consistency-list" class="attendance-consistency-list"
+              {% if attendance_conflicts is none %}hidden{% endif %}>
+            {% for conflict in attendance_conflicts or [] %}
+            <li>{{ conflict.display_name }}（{{ conflict.status }}）</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        {% if errors.get("result_" ~ item.code) %}<p class="field-error">{{ errors.get("result_" ~ item.code) }}</p>{% endif %}
+        <div class="reason-options" data-reason-for="{{ item.code }}"
+             {% if form_data.get("result_" ~ item.code, "confirmed") == "confirmed" %}hidden{% endif %}>
+          <p class="reason-label" id="reason-label-{{ item.code }}">理由を選択してください</p>
+          <div class="reason-choice-options" role="radiogroup" aria-labelledby="reason-label-{{ item.code }}">
+            {% for reason in item.reason_options %}
+            <label class="reason-option">
+              <input type="radio" name="reason_{{ item.code }}" value="{{ reason }}"
+                {% if form_data.get("reason_" ~ item.code) == reason %}checked{% endif %}
+                {% if form_data.get("result_" ~ item.code) in ["abnormal", "not_done"] %}required{% endif %}>
+              <span>{{ reason }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          {% if errors.get("reason_" ~ item.code) %}<p class="field-error">{{ errors.get("reason_" ~ item.code) }}</p>{% endif %}
+        </div>
+      </fieldset>
+      {% endfor %}
+    </section>
+
+    {% if errors.get("note") %}<p class="field-error">{{ errors.get("note") }}</p>{% endif %}
+
+    {% if errors.get("storage") %}<p class="field-error storage-error">{{ errors.get("storage") }}</p>{% endif %}
+    <button id="discard-draft" class="cancel-button discard-draft-button" type="button" hidden>下書きを破棄</button>
+    <div class="inspection-actions">
+      <a class="cancel-button" href="/">キャンセル</a>
+      <button class="save-inspection-button" type="submit" {% if not employees %}disabled{% endif %}>記録して退室</button>
+    </div>
+    <p class="leave-state-note">点検記録の保存時に、点検者の状態を「退勤済み」にします。</p>
+  </form>
+</main>
+{% endblock %}
